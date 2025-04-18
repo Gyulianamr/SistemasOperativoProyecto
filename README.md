@@ -6,6 +6,7 @@ Este proyecto fue creado por:
 **Cuenta: 20231900117**
 
 **Danny Yoel Hernandez Vaquedano**  
+**Cuenta: 20211900117**
 
 
 Proyecto para la clase de Sistemas Operativos.
