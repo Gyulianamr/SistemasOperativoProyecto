@@ -24,6 +24,7 @@ export default function SimuladorPlanificacion() {
   const [resultados, setResultados] = useState([]);
   const [algoritmo, setAlgoritmo] = useState("FCFS");
   const [quantum, setQuantum] = useState(2);
+  const [errorArchivo, setErrorArchivo] = useState("");
 
   const agregarProceso = () => {
     if (!nuevoProceso.id || !nuevoProceso.llegada || !nuevoProceso.rafaga) return;
@@ -73,20 +74,21 @@ export default function SimuladorPlanificacion() {
     while (lista.length > 0) {
       const disponibles = lista.filter(p => p.llegada <= tiempo);
       const siguiente = disponibles.length > 0
-        ? disponibles.reduce((a, b) => a.rafaga < b.rafaga ? a : b)
+        ? disponibles.reduce((a, b) => {
+            if (a.rafaga === b.rafaga) {
+              return a.id < b.id ? a : b; // Desempate por ID
+            }
+            return a.rafaga < b.rafaga ? a : b;
+          })
         : lista.reduce((a, b) => a.llegada < b.llegada ? a : b);
 
       if (siguiente.llegada > tiempo) tiempo = siguiente.llegada;
       const inicio = tiempo;
       const fin = inicio + siguiente.rafaga;
-      resultado.push({
-        ...siguiente,
-        inicio,
-        fin,
-        retorno: fin - siguiente.llegada,
-        espera: inicio - siguiente.llegada,
-        respuesta: inicio - siguiente.llegada
-      });
+      const retorno = fin - siguiente.llegada;
+      const espera = inicio - siguiente.llegada;
+      const respuesta = espera;
+      resultado.push({ ...siguiente, inicio, fin, retorno, espera, respuesta });
       tiempo = fin;
       lista.splice(lista.indexOf(siguiente), 1);
     }
@@ -94,42 +96,51 @@ export default function SimuladorPlanificacion() {
   };
 
   const simularRR = () => {
-    const lista = procesos.map(p => ({ ...p }));
+    const lista = procesos.filter(p => p.rafaga > 0).map(p => ({ ...p }));
     let tiempo = 0, queue = [], resultado = [], map = {};
     const done = new Set();
-
+  
     while (lista.length > 0 || queue.length > 0) {
+      // Agregar procesos disponibles a la cola
       lista.filter(p => p.llegada <= tiempo && !done.has(p.id)).forEach(p => {
         queue.push({ ...p });
         done.add(p.id);
       });
+  
+      // Si la cola está vacía, avanzar el tiempo hasta que llegue un nuevo proceso
       if (queue.length === 0) {
-        tiempo++;
-        continue;
+        if (lista.some(p => p.llegada > tiempo)) {
+          tiempo = Math.min(...lista.filter(p => p.llegada > tiempo).map(p => p.llegada));
+          continue;
+        }
+        break; // Salir si no quedan más procesos
       }
-
+  
+      // Procesar el siguiente proceso en la cola
       const actual = queue.shift();
       if (!map[actual.id]) map[actual.id] = { ...actual, rafagaRestante: actual.rafaga, inicio: tiempo };
-
       const uso = Math.min(quantum, map[actual.id].rafagaRestante);
       tiempo += uso;
       map[actual.id].rafagaRestante -= uso;
-
+  
+      // Agregar procesos recién disponibles a la cola
       lista.filter(p => p.llegada <= tiempo && !done.has(p.id)).forEach(p => {
         queue.push({ ...p });
         done.add(p.id);
       });
-
+  
+      // Si el proceso termina, calcular métricas y agregarlo a los resultados
       if (map[actual.id].rafagaRestante === 0) {
         map[actual.id].fin = tiempo;
         map[actual.id].retorno = tiempo - actual.llegada;
-        map[actual.id].espera = (tiempo - actual.llegada) - actual.rafaga;
+        map[actual.id].espera = map[actual.id].inicio - actual.llegada;
         map[actual.id].respuesta = map[actual.id].inicio - actual.llegada;
         resultado.push(map[actual.id]);
       } else {
-        queue.push(actual);
+        queue.push(actual); // Devolver el proceso a la cola si queda ráfaga pendiente
       }
     }
+  
     setResultados(resultado);
   };
 
@@ -140,20 +151,21 @@ export default function SimuladorPlanificacion() {
     while (lista.length > 0) {
       const disponibles = lista.filter(p => p.llegada <= tiempo);
       const siguiente = disponibles.length > 0
-        ? disponibles.reduce((a, b) => a.prioridad < b.prioridad ? a : b)
+        ? disponibles.reduce((a, b) => {
+            if (a.prioridad === b.prioridad) {
+              return a.llegada < b.llegada ? a : b; // Desempate por tiempo de llegada
+            }
+            return a.prioridad < b.prioridad ? a : b;
+          })
         : lista.reduce((a, b) => a.llegada < b.llegada ? a : b);
 
       if (siguiente.llegada > tiempo) tiempo = siguiente.llegada;
       const inicio = tiempo;
       const fin = inicio + siguiente.rafaga;
-      resultado.push({
-        ...siguiente,
-        inicio,
-        fin,
-        retorno: fin - siguiente.llegada,
-        espera: inicio - siguiente.llegada,
-        respuesta: inicio - siguiente.llegada
-      });
+      const retorno = fin - siguiente.llegada;
+      const espera = inicio - siguiente.llegada;
+      const respuesta = espera;
+      resultado.push({ ...siguiente, inicio, fin, retorno, espera, respuesta });
       tiempo = fin;
       lista.splice(lista.indexOf(siguiente), 1);
     }
@@ -165,8 +177,8 @@ export default function SimuladorPlanificacion() {
     datasets: [{
       label: 'Procesos',
       data: resultados.map(r => r.rafaga),
-      backgroundColor: 'rgba(75, 192, 192, 0.6)',
-      borderColor: 'rgba(75, 192, 192, 1)',
+      backgroundColor: 'rgba(250, 0, 183, 0.6)',
+      borderColor: 'rgb(114, 3, 129)',
       borderWidth: 1,
     }]
   };
@@ -178,6 +190,53 @@ export default function SimuladorPlanificacion() {
       x: { stacked: true, title: { display: true, text: 'Tiempo' } },
       y: { stacked: true }
     }
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      try {
+        let data;
+        if (file.name.endsWith(".json")) {
+          data = JSON.parse(content);
+        } else if (file.name.endsWith(".csv")) {
+          const rows = content.split("\n").map(row => row.split(","));
+          const headers = rows[0];
+          data = rows.slice(1).map(row => {
+            const obj = {};
+            headers.forEach((header, index) => {
+              obj[header.trim()] = row[index] ? row[index].trim() : "";
+            });
+            return obj;
+          });
+        } else {
+          throw new Error("Formato de archivo no soportado. Usa JSON o CSV.");
+        }
+
+        // Validar datos
+        data.forEach((p, index) => {
+          if (!p.id || isNaN(p.llegada) || isNaN(p.rafaga)) {
+            throw new Error(`Error en el proceso ${index + 1}: Faltan datos o formato incorrecto.`);
+          }
+        });
+
+        // Convertir datos y actualizar estado
+        setProcesos(data.map(p => ({
+          id: p.id,
+          llegada: parseInt(p.llegada),
+          rafaga: parseInt(p.rafaga),
+          prioridad: parseInt(p.prioridad) || 0
+        })));
+        setErrorArchivo("");
+      } catch (error) {
+        setErrorArchivo(error.message);
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -234,6 +293,17 @@ export default function SimuladorPlanificacion() {
               setProcesos([]);
               setResultados([]);
             }}>Limpiar</button>
+            <label htmlFor="file-upload" className="file-upload-label">
+              Cargar desde archivo
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              accept=".json,.csv"
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+            />
+            {errorArchivo && <p className="error">{errorArchivo}</p>}
           </div>
         </div>
 
