@@ -1,4 +1,6 @@
 # Simulador de Planificación de Sistemas Operativos
+Video de Simulacion de procesos:  
+[Ver archivo en Google Drive](https://drive.google.com/file/d/1y78_MFtDcHHI_yG1vRcdsDMR8Zxd-3Wn/view?usp=sharing)
 
 Este proyecto fue creado por:
 
