@@ -1,4 +1,4 @@
-# Simulador de Planificación de Sistemas Operativos
+# Simulador de Planificación de Procesos
 Informe Tecnico Simulacion de procesos:  
 [Ver Informe en Google Drive](https://drive.google.com/file/d/1P4eOOd4NSZdoNf35yKUfcezxvtid6Ejm/view?usp=sharing)
 
