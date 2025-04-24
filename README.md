@@ -10,7 +10,7 @@ Este proyecto fue creado por:
 🆔 Cuenta: 20231900117
 
 👨‍💻 Danny Yoel Hernández Vaquedano  
-🆔 Cuenta: 20211900251
+🆔 Cuenta: 20201900251
 
 🎓 Proyecto para la clase de Sistemas Operativos  
 
