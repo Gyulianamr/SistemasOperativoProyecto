@@ -9,8 +9,7 @@ Este proyecto fue creado por:
 👩‍💻 Génesis Yuliana Medina Ramos  
 🆔 Cuenta: 20231900117
 
-👨‍💻 Danny Yoel Hernández Vaquedano  
-🆔 Cuenta: 20201900251
+holisss
 
 🎓 Proyecto para la clase de Sistemas Operativos  
 
