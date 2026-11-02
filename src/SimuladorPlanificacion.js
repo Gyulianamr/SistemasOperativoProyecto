@@ -33,9 +33,9 @@ export default function SimuladorPlanificacion() {
       ...procesos,
       {
         ...nuevoProceso,
-        llegada: parseInt(nuevoProceso.llegada),
-        rafaga: parseInt(nuevoProceso.rafaga),
-        prioridad: parseInt(nuevoProceso.prioridad) || 0
+        llegada: Number.parseInt(nuevoProceso.llegada, 10),
+        rafaga: Number.parseInt(nuevoProceso.rafaga, 10),
+        prioridad: Number.parseInt(nuevoProceso.prioridad, 10) || 0
       }
     ]);
     setNuevoProceso({ id: "", llegada: "", rafaga: "", prioridad: "" });
@@ -92,9 +92,12 @@ export default function SimuladorPlanificacion() {
             return a.id < b.id ? a : b; // Desempate por ID
           }
           return a.rafaga < b.rafaga ? a : b;
-        });
+        }, disponibles[0]);
       } else {
-        siguiente = lista.reduce((a, b) => (a.llegada < b.llegada ? a : b));
+        siguiente = lista.reduce(
+          (a, b) => (a.llegada < b.llegada ? a : b),
+          lista[0]
+        );
         tiempo = siguiente.llegada;
       }
 
@@ -188,9 +191,12 @@ export default function SimuladorPlanificacion() {
             return a.llegada < b.llegada ? a : b; // Desempate por tiempo de llegada
           }
           return a.prioridad < b.prioridad ? a : b;
-        });
+        }, disponibles[0]);
       } else {
-        siguiente = lista.reduce((a, b) => (a.llegada < b.llegada ? a : b));
+        siguiente = lista.reduce(
+          (a, b) => (a.llegada < b.llegada ? a : b),
+          lista[0]
+        );
         tiempo = siguiente.llegada;
       }
 
@@ -282,16 +288,16 @@ export default function SimuladorPlanificacion() {
         }
         // Validar datos
         data.forEach((p, index) => {
-          if (!p.id || isNaN(p.llegada) || isNaN(p.rafaga)) {
+          if (!p.id || Number.isNaN(Number(p.llegada)) || Number.isNaN(Number(p.rafaga))) {
             throw new Error(`Error en el proceso ${index + 1}: Faltan datos o formato incorrecto.`);
           }
         });
         setProcesos(
           data.map((p) => ({
             id: p.id,
-            llegada: parseInt(p.llegada),
-            rafaga: parseInt(p.rafaga),
-            prioridad: parseInt(p.prioridad) || 0
+            llegada: Number.parseInt(p.llegada, 10),
+            rafaga: Number.parseInt(p.rafaga, 10),
+            prioridad: Number.parseInt(p.prioridad, 10) || 0
           }))
         );
         setErrorArchivo("");
@@ -362,7 +368,7 @@ export default function SimuladorPlanificacion() {
               <input
                 type="number"
                 value={quantum}
-                onChange={(e) => setQuantum(parseInt(e.target.value))}
+                onChange={(e) => setQuantum(Number.parseInt(e.target.value, 10))}
                 placeholder="Quantum"
               />
             )}
